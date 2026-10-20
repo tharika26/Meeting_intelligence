@@ -1,0 +1,13 @@
+.venv/
+**/.venv/
+__pycache__/
+*.py[cod]
+
+.env
+.env.*
+!.env.example
+
+backend/meeting_intel.db
+backend/meeting_intel.db-*
+backend/uploads/*
+!backend/uploads/.gitkeep

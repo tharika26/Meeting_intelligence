@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Meeting Intelligence &amp; Project Action Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7.26.10/babel.min.js"></script>
+<style>
+  :root{
+    --ink:#0E1116;
+    --surface:#171B23;
+    --surface-2:#1F2530;
+    --line:#2A3140;
+    --text:#E8EAF0;
+    --muted:#8991A3;
+    --amber:#E8A33D;
+    --teal:#4FD1C5;
+    --rose:#E5697A;
+    --violet:#8E86E5;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--ink);color:var(--text);font-family:'Inter',sans-serif;}
+  .display{font-family:'Fraunces',serif;}
+  .mono{font-family:'JetBrains Mono',monospace;}
+  ::selection{background:var(--amber);color:#151515;}
+  a{color:inherit;}
+  ::-webkit-scrollbar{width:10px;height:10px;}
+  ::-webkit-scrollbar-thumb{background:var(--line);border-radius:6px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+
+  .app{display:flex;min-height:100vh;}
+  .sidebar{width:248px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--line);
+    display:flex;flex-direction:column;padding:28px 18px;position:sticky;top:0;height:100vh;}
+  .brand{display:flex;align-items:center;gap:10px;padding:0 8px 26px 8px;border-bottom:1px solid var(--line);margin-bottom:18px;}
+  .brand-mark{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--amber),var(--rose));
+    display:flex;align-items:center;justify-content:center;font-weight:700;color:#151515;font-family:'Fraunces',serif;}
+  .brand-name{font-family:'Fraunces',serif;font-weight:600;font-size:15px;line-height:1.2;}
+  .brand-sub{font-size:11px;color:var(--muted);}
+
+  .nav-item{display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:8px;cursor:pointer;
+    color:var(--muted);font-size:13.5px;font-weight:500;margin-bottom:2px;transition:.15s;}
+  .nav-item:hover{background:var(--surface-2);color:var(--text);}
+  .nav-item.active{background:var(--surface-2);color:var(--text);box-shadow:inset 3px 0 0 var(--amber);}
+  .nav-num{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);width:16px;}
+
+  .main{flex:1;min-width:0;padding:34px 42px 60px 42px;}
+  .page-head{margin-bottom:26px;}
+  .eyebrow{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--amber);margin-bottom:8px;}
+  .page-title{font-family:'Fraunces',serif;font-size:28px;font-weight:600;margin:0 0 6px 0;}
+  .page-desc{color:var(--muted);font-size:14px;max-width:640px;}
+
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:20px;}
+  .btn{background:var(--amber);color:#151515;border:none;padding:10px 18px;border-radius:8px;font-weight:600;
+    font-size:13.5px;cursor:pointer;transition:.15s;}
+  .btn:hover{filter:brightness(1.08);}
+  .btn:disabled{opacity:.45;cursor:not-allowed;}
+  .btn-ghost{background:transparent;border:1px solid var(--line);color:var(--text);padding:9px 16px;border-radius:8px;
+    font-size:13px;cursor:pointer;}
+  .btn-ghost:hover{border-color:var(--amber);color:var(--amber);}
+  input[type=text],input[type=search],textarea,select{
+    background:var(--surface-2);border:1px solid var(--line);color:var(--text);border-radius:8px;
+    padding:10px 12px;font-size:13.5px;font-family:'Inter',sans-serif;outline:none;width:100%;}
+  input:focus,textarea:focus,select:focus{border-color:var(--amber);}
+  label{font-size:12px;color:var(--muted);display:block;margin-bottom:6px;font-weight:500;}
+
+  .pill{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:3px 9px;
+    border-radius:100px;font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.03em;}
+  .pill-open{background:rgba(142,134,229,.15);color:var(--violet);}
+  .pill-in_progress{background:rgba(232,163,61,.15);color:var(--amber);}
+  .pill-done{background:rgba(79,209,197,.15);color:var(--teal);}
+  .pill-blocked{background:rgba(229,105,122,.15);color:var(--rose);}
+  .pill-overdue{background:rgba(229,105,122,.18);color:var(--rose);}
+
+  .pipeline{display:flex;align-items:center;gap:0;margin-bottom:28px;background:var(--surface);
+    border:1px solid var(--line);border-radius:12px;padding:18px 22px;}
+  .pstep{display:flex;align-items:center;gap:10px;flex:1;}
+  .pdot{width:26px;height:26px;border-radius:50%;border:2px solid var(--line);display:flex;align-items:center;
+    justify-content:center;font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--muted);flex-shrink:0;}
+  .pdot.done{background:var(--teal);border-color:var(--teal);color:#0E1116;}
+  .pdot.active{background:var(--amber);border-color:var(--amber);color:#0E1116;}
+  .plabel{font-size:12.5px;color:var(--muted);font-weight:500;}
+  .plabel.active{color:var(--text);}
+  .pline{flex:1;height:1px;background:var(--line);margin:0 6px;}
+
+  table{width:100%;border-collapse:collapse;font-size:13.5px;}
+  th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);
+    font-weight:600;padding:10px 12px;border-bottom:1px solid var(--line);}
+  td{padding:12px;border-bottom:1px solid var(--line);vertical-align:top;}
+  tr:last-child td{border-bottom:none;}
+  tr:hover td{background:rgba(255,255,255,.015);}
+
+  .stat{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px 20px;}
+  .stat-num{font-family:'Fraunces',serif;font-size:32px;font-weight:600;line-height:1;}
+  .stat-label{color:var(--muted);font-size:12px;margin-top:6px;}
+
+  .grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+  .grid-2{display:grid;grid-template-columns:1.3fr 1fr;gap:20px;}
+
+  .dropzone{border:1.5px dashed var(--line);border-radius:12px;padding:44px 20px;text-align:center;cursor:pointer;
+    transition:.15s;}
+  .dropzone:hover{border-color:var(--amber);background:rgba(232,163,61,.03);}
+  .dropzone.drag{border-color:var(--amber);background:rgba(232,163,61,.06);}
+
+  .segment{padding:12px 0;border-bottom:1px solid var(--line);}
+  .segment:last-child{border-bottom:none;}
+  .seg-time{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);margin-bottom:4px;}
+  .seg-text{font-size:13.5px;line-height:1.6;color:var(--text);}
+
+  .search-hit{padding:16px;border:1px solid var(--line);border-radius:10px;margin-bottom:10px;cursor:pointer;transition:.15s;}
+  .search-hit:hover{border-color:var(--amber);}
+  .score-bar{height:4px;background:var(--surface-2);border-radius:2px;overflow:hidden;margin-top:8px;}
+  .score-fill{height:100%;background:linear-gradient(90deg,var(--amber),var(--rose));}
+
+  .toast{position:fixed;bottom:24px;right:24px;background:var(--surface-2);border:1px solid var(--line);
+    padding:12px 18px;border-radius:9px;font-size:13px;box-shadow:0 8px 24px rgba(0,0,0,.4);z-index:50;}
+  .empty{padding:50px 20px;text-align:center;color:var(--muted);font-size:13.5px;}
+  .kv{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--line);font-size:13px;}
+  .kv:last-child{border-bottom:none;}
+  .owner-bar-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+  .owner-bar-track{flex:1;height:8px;background:var(--surface-2);border-radius:4px;overflow:hidden;}
+  .owner-bar-fill{height:100%;background:var(--violet);}
+  select{-webkit-appearance:none;appearance:none;}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel" data-presets="react">
+const {useState, useEffect, useCallback, useRef} = React;
+
+// ---------------------------------------------------------------------
+// API layer
+// ---------------------------------------------------------------------
+function useApiBase(){
+  const [base, setBase] = useState(localStorage.getItem("mi_api_base") || "http://localhost:8000");
+  useEffect(()=>{ localStorage.setItem("mi_api_base", base); }, [base]);
+  return [base, setBase];
+}
+
+async function api(base, path, opts={}){
+  const res = await fetch(base + path, {
+    headers: opts.body && !(opts.body instanceof FormData) ? {"Content-Type":"application/json"} : undefined,
+    ...opts,
+  });
+  if(!res.ok){
+    let msg = res.statusText;
+    try{ const j = await res.json(); msg = j.detail || msg; }catch(e){}
+    throw new Error(msg);
+  }
+  return res.json();
+}
+
+const STAGES = [
+  {key:"uploaded", label:"Recording"},
+  {key:"transcribed", label:"Transcript"},
+  {key:"analyzed", label:"Analysis"},
+  {key:"stored", label:"Database"},
+];
+
+function stageIndex(status){
+  if(!status) return -1;
+  if(status === "uploaded") return 0;
+  if(status === "transcribing") return 0;
+  if(status === "transcribed") return 1;
+  if(status === "analyzing") return 1;
+  if(status === "analyzed") return 3;
+  return -1;
+}
+
+function Pipeline({status}){
+  const idx = stageIndex(status);
+  return (
+    <div className="pipeline">
+      {STAGES.map((s,i)=>(
+        <React.Fragment key={s.key}>
+          <div className="pstep">
+            <div className={"pdot " + (i < idx || (i===3&&idx===3) ? "done" : i===idx ? "active":"")}>
+              {i < idx || (i===3&&idx===3) ? "✓" : i+1}
+            </div>
+            <div className={"plabel " + (i<=idx?"active":"")}>{s.label}</div>
+          </div>
+          {i < STAGES.length-1 && <div className="pline"/>}
+        </React.Fragment>
+      ))}
+    </div>
+  );
+}
+
+function Pill({status}){
+  const map = {open:"Open", in_progress:"In progress", done:"Done", blocked:"Blocked"};
+  return <span className={"pill pill-"+status}>{map[status]||status}</span>;
+}
+
+// ---------------------------------------------------------------------
+// Sidebar
+// ---------------------------------------------------------------------
+const NAV = [
+  {key:"upload", label:"Meeting Upload"},
+  {key:"transcript", label:"Transcript Review"},
+  {key:"summary", label:"Meeting Summary"},
+  {key:"actions", label:"Action Tracker"},
+  {key:"decisions", label:"Decision Log"},
+  {key:"search", label:"Search"},
+  {key:"dashboard", label:"Project Dashboard"},
+];
+
+function Sidebar({page, setPage, apiBase, setApiBase}){
+  const [editingBase, setEditingBase] = useState(false);
+  return (
+    <div className="sidebar">
+      <div className="brand">
+        <div className="brand-mark">M</div>
+        <div>
+          <div className="brand-name">Meeting Intel</div>
+          <div className="brand-sub">Action Tracker</div>
+        </div>
+      </div>
+      {NAV.map((n,i)=>(
+        <div key={n.key} className={"nav-item "+(page===n.key?"active":"")} onClick={()=>setPage(n.key)}>
+          <span className="nav-num">{String(i+1).padStart(2,"0")}</span>{n.label}
+        </div>
+      ))}
+      <div style={{marginTop:"auto",paddingTop:16,borderTop:"1px solid var(--line)"}}>
+        {editingBase ? (
+          <input type="text" value={apiBase} onChange={e=>setApiBase(e.target.value)}
+            onBlur={()=>setEditingBase(false)} autoFocus
+            style={{fontSize:11}} />
+        ) : (
+          <div className="mono" style={{fontSize:10.5,color:"var(--muted)",cursor:"pointer"}}
+               onClick={()=>setEditingBase(true)} title="Click to edit API base URL">
+            API: {apiBase}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------
+// Page: Meeting Upload
+// ---------------------------------------------------------------------
+function UploadPage({apiBase, meetings, refreshMeetings, activeMeeting, setActiveMeeting, notify}){
+  const [title, setTitle] = useState("");
+  const [project, setProject] = useState("");
+  const [file, setFile] = useState(null);
+  const [drag, setDrag] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [manualText, setManualText] = useState("");
+  const fileRef = useRef();
+
+  const doUpload = async () => {
+    if(!file){ notify("Choose an audio file first"); return; }
+    setBusy(true);
+    try{
+      const fd = new FormData();
+      fd.append("file", file);
+      fd.append("title", title || file.name);
+      if(project) fd.append("project", project);
+      const res = await api(apiBase, "/meetings/upload", {method:"POST", body: fd});
+      notify("Uploaded \u2192 " + res.title);
+      setActiveMeeting(res.id);
+      await refreshMeetings();
+      setFile(null); setTitle(""); setProject("");
+    }catch(e){ notify("Upload failed: " + e.message); }
+    setBusy(false);
+  };
+
+  const runTranscribe = async (meetingId, useManual) => {
+    setBusy(true);
+    try{
+      const body = useManual && manualText.trim() ? {manual_text: manualText} : {};
+      await api(apiBase, "/meetings/transcribe?meeting_id="+meetingId, {method:"POST", body: JSON.stringify(body)});
+      notify("Transcription complete");
+      await refreshMeetings();
+    }catch(e){ notify("Transcribe failed: " + e.message); }
+    setBusy(false);
+  };
+
+  const runAnalyze = async (meetingId) => {
+    setBusy(true);
+    try{
+      await api(apiBase, "/meetings/analyze?meeting_id="+meetingId, {method:"POST", body: JSON.stringify({force:true})});
+      notify("Analysis complete \u2014 decisions, actions & risks extracted");
+      await refreshMeetings();
+    }catch(e){ notify("Analyze failed: " + e.message); }
+    setBusy(false);
+  };
+
+  const active = meetings.find(m=>m.id===activeMeeting);
+
+  return (
+    <div>
+      <div className="page-head">
+        <div className="eyebrow">Step 01</div>
+        <h1 className="page-title">Meeting Upload</h1>
+        <p className="page-desc">Upload a recording, then run it through transcription and analysis. Each stage is a separate call so you can review output before moving on.</p>
+      </div>
+
+      <div className="grid-2">
+        <div className="card">
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:14}}>
+            <div>
+              <label>Meeting title</label>
+              <input type="text" placeholder="Sprint 14 Planning" value={title} onChange={e=>setTitle(e.target.value)}/>
+            </div>
+            <div>
+              <label>Project</label>
+              <input type="text" placeholder="Aurora Payments" value={project} onChange={e=>setProject(e.target.value)}/>
+            </div>
+          </div>
+
+          <div className={"dropzone "+(drag?"drag":"")}
+               onDragOver={e=>{e.preventDefault(); setDrag(true);}}
+               onDragLeave={()=>setDrag(false)}
+               onDrop={e=>{e.preventDefault(); setDrag(false); if(e.dataTransfer.files[0]) setFile(e.dataTransfer.files[0]);}}
+               onClick={()=>fileRef.current.click()}>
+            <input ref={fileRef} type="file" accept="audio/*,video/mp4" style={{display:"none"}}
+                   onChange={e=>setFile(e.target.files[0])}/>
+            <div style={{fontSize:28,marginBottom:8}}>🎙️</div>
+            <div style={{fontWeight:600,marginBottom:4}}>{file ? file.name : "Drop audio file here or click to browse"}</div>
+            <div style={{fontSize:12,color:"var(--muted)"}}>MP3, WAV, M4A, MP4, WEBM, OGG, FLAC \u2014 up to 200MB</div>
+          </div>
+
+          <div style={{marginTop:16,display:"flex",gap:10}}>
+            <button className="btn" disabled={busy} onClick={doUpload}>{busy ? "Uploading\u2026" : "Upload recording"}</button>
+          </div>
+
+          <div style={{marginTop:18,paddingTop:16,borderTop:"1px solid var(--line)"}}>
+            <label>Or paste a transcript directly (skips speech-to-text \u2014 useful when you already have notes)</label>
+            <textarea rows={3} placeholder="Paste transcript text..." value={manualText} onChange={e=>setManualText(e.target.value)}/>
+          </div>
+        </div>
+
+        <div className="card">
+          <div style={{fontWeight:600,marginBottom:12,fontSize:14}}>Pipeline for selected meeting</div>
+          {!active ? (
+            <div className="empty">Upload or select a meeting to run it through the pipeline.</div>
+          ) : (
+            <div>
+              <div style={{marginBottom:14}}>
+                <div style={{fontWeight:600}}>{active.title}</div>
+                <div style={{fontSize:12,color:"var(--muted)"}}>{active.project || "No project"} \u00b7 status: {active.status}</div>
+              </div>
+              <Pipeline status={active.status} />
+              <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
+                <button className="btn-ghost" disabled={busy} onClick={()=>runTranscribe(active.id, !!manualText.trim())}>1. Transcribe</button>
+                <button className="btn-ghost" disabled={busy} onClick={()=>runAnalyze(active.id)}>2. Analyze (extract insights)</button>
+              </div>
+            </div>
+          )}
+
+          <div style={{marginTop:20,paddingTop:16,borderTop:"1px solid var(--line)"}}>
+            <div style={{fontSize:12,color:"var(--muted)",marginBottom:10}}>All meetings</div>
+            {meetings.length===0 && <div className="empty">No meetings yet.</div>}
+            {meetings.map(m=>(
+              <div key={m.id} onClick={()=>setActiveMeeting(m.id)}
+                   style={{padding:"9px 10px",borderRadius:8,cursor:"pointer",marginBottom:4,
+                           background: m.id===activeMeeting ? "var(--surface-2)":"transparent",
+                           display:"flex",justifyContent:"space-between",fontSize:13}}>
+                <span>{m.title}</span>
+                <span className="mono" style={{color:"var(--muted)",fontSize:11}}>{m.status}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------
+// Page: Transcript Review
+// ---------------------------------------------------------------------
+function TranscriptPage({apiBase, meetings, activeMeeting, setActiveMeeting}){
+  const [transcript, setTranscript] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(()=>{
+    if(!activeMeeting) return;
+    setLoading(true);
+    api(apiBase, "/meetings/"+activeMeeting+"/transcript")
+      .then(setTranscript).catch(()=>setTranscript(null)).finally(()=>setLoading(false));
+  }, [activeMeeting, apiBase]);
+
+  const active = meetings.find(m=>m.id===activeMeeting);
+
+  return (
+    <div>
+      <div className="page-head">
+        <div className="eyebrow">Step 02</div>
+        <h1 className="page-title">Transcript Review</h1>
+        <p className="page-desc">Review the raw speech-to-text output before it goes to analysis.</p>
+      </div>
+      <MeetingPicker meetings={meetings} activeMeeting={activeMeeting} setActiveMeeting={setActiveMeeting}/>
+      <div className="card" style={{marginTop:16}}>
+        {!activeMeeting ? <div className="empty">Select a meeting above.</div>
+        : loading ? <div className="empty">Loading transcript\u2026</div>
+        : !transcript ? <div className="empty">No transcript yet \u2014 run transcription from Meeting Upload.</div>
+        : (
+          <div>
+            <div style={{display:"flex",justifyContent:"space-between",marginBottom:14,fontSize:12,color:"var(--muted)"}}>
+              <span>Engine: <span className="mono">{transcript.engine}</span></span>
+              <span>Language: <span className="mono">{transcript.language}</span></span>
+              <span>{active && active.title}</span>
+            </div>
+            {transcript.segments && transcript.segments.length ? transcript.segments.map((s,i)=>(
+              <div className="segment" key={i}>
+                <div className="seg-time">{s.speaker || "Speaker"} \u00b7 {s.start.toFixed?.(0) ?? s.start}s\u2013{s.end.toFixed?.(0) ?? s.end}s</div>
+                <div className="seg-text">{s.text}</div>
+              </div>
+            )) : <div className="seg-text">{transcript.full_text}</div>}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function MeetingPicker({meetings, activeMeeting, setActiveMeeting}){
+  return (
+    <select value={activeMeeting || ""} onChange={e=>setActiveMeeting(e.target.value)} style={{maxWidth:360}}>
+      <option value="">Select a meeting\u2026</option>
+      {meetings.map(m=><option key={m.id} value={m.id}>{m.title} {m.project ? "\u2014 "+m.project : ""}</option>)}
+    </select>
+  );
+}
+
+// ---------------------------------------------------------------------
+// Page: Meeting Summary
+// ---------------------------------------------------------------------
+function SummaryPage({apiBase, meetings, activeMeeting, setActiveMeeting}){
+  const [data, setData] = useState(null);
+  useEffect(()=>{
+    if(!activeMeeting){ setData(null); return; }
+    api(apiBase, "/meetings/"+activeMeeting).then(setData).catch(()=>setData(null));
+  }, [activeMeeting, apiBase]);
+
+  return (
+    <div>
+      <div className="page-head">
+        <div className="eyebrow">Step 03</div>
+        <h1 className="page-title">Meeting Summary</h1>
+        <p className="page-desc">The LLM-generated synopsis and key topics for a single meeting.</p>
+      </div>
+      <MeetingPicker meetings={meetings} activeMeeting={activeMeeting} setActiveMeeting={setActiveMeeting}/>
+      <div className="card" style={{marginTop:16}}>
+        {!data ? <div className="empty">Select an analyzed meeting.</div> : (
+          <div>
+            <div style={{fontSize:15,lineHeight:1.7,marginBottom:18}}>{data.summary || "No summary yet \u2014 run Analyze."}</div>
+            {data.key_topics && data.key_topics.length>0 && (
+              <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:20}}>
+                {data.key_topics.map((t,i)=><span key={i} className="pill" style={{background:"var(--surface-2)",color:"var(--text)"}}>{t}</span>)}
+              </div>
+            )}
+            <div className="grid-4" style={{gridTemplateColumns:"repeat(4,1fr)"}}>
+              <div className="stat"><div className="stat-num">{data.actions.length}</div><div className="stat-label">Action items</div></div>
+              <div className="stat"><div className="stat-num">{data.decisions.length}</div><div className="stat-label">Decisions</div></div>
+              <div className="stat"><div className="stat-num">{data.risks.length}</div><div className="stat-label">Risks</div></div>
+              <div className="stat"><div className="stat-num">{data.questions.length}</div><div className="stat-label">Open questions</div></div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------
+// Page: Action Tracker
+// ---------------------------------------------------------------------
+function ActionTracker({apiBase, notify}){
+  const [actions, setActions] = useState([]);
+  const [ownerFilter, setOwnerFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [overdueOnly, setOverdueOnly] = useState(false);
+
+  const load = useCallback(()=>{
+    const params = new URLSearchParams();
+    if(ownerFilter) params.set("owner", ownerFilter);
+    if(statusFilter) params.set("status", statusFilter);
+    if(overdueOnly) params.set("overdue_only", "true");
+    api(apiBase, "/actions?"+params.toString()).then(setActions).catch(()=>setActions([]));
+  }, [apiBase, ownerFilter, statusFilter, overdueOnly]);
+
+  useEffect(()=>{ load(); }, [load]);
+
+  const updateStatus = async (id, status) => {
+    try{
+      await api(apiBase, "/actions/"+id, {method:"PUT", body: JSON.stringify({status})});
+      notify("Action updated");
+      load();
+    }catch(e){ notify("Update failed: "+e.message); }
+  };
+
+  return (
+    <div>
+      <div className="page-head">
+        <div className="eyebrow">Live</div>
+        <h1 className="page-title">Action Tracker</h1>
+        <p className="page-desc">Every action item extracted across all meetings, with owner and deadline tracking.</p>
+      </div>
+
+      <div style={{display:"flex",gap:10,marginBottom:16,flexWrap:"wrap",alignItems:"center"}}>
+        <input type="text" placeholder="Filter by owner\u2026" style={{maxWidth:180}} value={ownerFilter} onChange={e=>setOwnerFilter(e.target.value)}/>
+        <select style={{maxWidth:170}} value={statusFilter} onChange={e=>setStatusFilter(e.target.value)}>
+          <option value="">All statuses</option>
+          <option value="open">Open</option>
+          <option value="in_progress">In progress</option>
+          <option value="done">Done</option>
+          <option value="blocked">Blocked</option>
+        </select>
+        <label style={{display:"flex",alignItems:"center",gap:6,fontSize:13,color:"var(--text)",cursor:"pointer"}}>
+          <input type="checkbox" checked={overdueOnly} onChange={e=>setOverdueOnly(e.target.checked)} style={{width:"auto"}}/>
+          Overdue only
+        </label>
+      </div>
+
+      <div className="card" style={{padding:0}}>
+        <table>
+          <thead><tr>
+            <th>Action</th><th>Owner</th><th>Meeting</th><th>Deadline</th><th>Priority</th><th>Status</th>
+          </tr></thead>
+          <tbody>
+            {actions.length===0 && <tr><td colSpan={6}><div className="empty">No action items match these filters.</div></td></tr>}
+            {actions.map(a=>(
+              <tr key={a.id}>
+                <td style={{maxWidth:320}}>{a.description}</td>
+                <td>{a.owner || <span style={{color:"var(--muted)"}}>Unassigned</span>}</td>
+                <td style={{color:"var(--muted)",fontSize:12.5}}>{a.meeting_title}</td>
+                <td>
+                  <span className="mono" style={{fontSize:12}}>{a.deadline || "\u2014"}</span>
+                  {a.is_overdue && <div className="pill pill-overdue" style={{marginTop:4}}>Overdue</div>}
+                </td>
+                <td style={{textTransform:"capitalize",fontSize:12.5}}>{a.priority}</td>
+                <td>
+                  <select value={a.status} onChange={e=>updateStatus(a.id, e.target.value)} style={{width:135,padding:"6px 8px",fontSize:12.5}}>
+                    <option value="open">Open</option>
+                    <option value="in_progress">In progress</option>
+                    <option value="done">Done</option>
+                    <option value="blocked">Blocked</option>
+                  </select>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------
+// Page: Decision Log
+// ---------------------------------------------------------------------
+function DecisionLog({apiBase}){
+  const [decisions, setDecisions] = useState([]);
+  const [risks, setRisks] = useState([]);
+  const [tab, setTab] = useState("decisions");
+
+  useEffect(()=>{
+    api(apiBase, "/decisions").then(setDecisions).catch(()=>setDecisions([]));
+    api(apiBase, "/risks").then(setRisks).catch(()=>setRisks([]));
+  }, [apiBase]);
+
+  return (
+    <div>
+      <div className="page-head">
+        <div className="eyebrow">Live</div>
+        <h1 className="page-title">Decision Log</h1>
+        <p className="page-desc">Every decision and risk captured, with the meeting it came from.</p>
+      </div>
+
+      <div style={{display:"flex",gap:8,marginBottom:16}}>
+        <button className="btn-ghost" style={tab==="decisions"?{borderColor:"var(--amber)",color:"var(--amber)"}:{}} onClick={()=>setTab("decisions")}>Decisions ({decisions.length})</button>
+        <button className="btn-ghost" style={tab==="risks"?{borderColor:"var(--amber)",color:"var(--amber)"}:{}} onClick={()=>setTab("risks")}>Risks ({risks.length})</button>
+      </div>
+
+      {tab==="decisions" && (
+        <div>
+          {decisions.length===0 && <div className="card"><div className="empty">No decisions logged yet.</div></div>}
+          {decisions.map(d=>(
+            <div className="card" key={d.id} style={{marginBottom:10}}>
+              <div style={{fontWeight:600,marginBottom:6}}>{d.description}</div>
+              {d.rationale && <div style={{fontSize:13,color:"var(--muted)",marginBottom:8}}>{d.rationale}</div>}
+              <div style={{display:"flex",justifyContent:"space-between",fontSize:12,color:"var(--muted)"}}>
+                <span>{d.decided_by ? "Decided by "+d.decided_by : "Decided by team"}</span>
+                <span className="mono">{d.meeting_title}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+      {tab==="risks" && (
+        <div>
+          {risks.length===0 && <div className="card"><div className="empty">No risks logged yet.</div></div>}
+          {risks.map(r=>(
+            <div className="card" key={r.id} style={{marginBottom:10}}>
+              <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
+                <div style={{fontWeight:600}}>{r.description}</div>
+                <span className="pill" style={{background: r.severity==="high"?"rgba(229,105,122,.15)":"rgba(232,163,61,.15)",
+                                                 color: r.severity==="high"?"var(--rose)":"var(--amber)"}}>{r.severity}</span>
+              </div>
+              {r.mitigation && <div style={{fontSize:13,color:"var(--muted)",marginBottom:8}}>Mitigation: {r.mitigation}</div>}
+              <div className="mono" style={{fontSize:12,color:"var(--muted)"}}>{r.meeting_title}</div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------
+// Page: Search
+// ---------------------------------------------------------------------
+function SearchPage({apiBase, setPage, setActiveMeeting}){
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  const runSearch = async () => {
+    if(!query.trim()) return;
+    setLoading(true);
+    try{
+      const res = await api(apiBase, "/meetings/search", {method:"POST", body: JSON.stringify({query, top_k:8})});
+      setResults(res.results);
+    }catch(e){ setResults([]); }
+    setLoading(false);
+  };
+
+  return (
+    <div>
+      <div className="page-head">
+        <div className="eyebrow">Semantic search</div>
+        <h1 className="page-title">Search Past Meetings</h1>
+        <p className="page-desc">Search across every transcript, summary, decision and action \u2014 phrase it naturally, e.g. "what did we decide about the vendor delay".</p>
+      </div>
+      <div style={{display:"flex",gap:10,marginBottom:20}}>
+        <input type="search" placeholder="Search meetings\u2026" value={query}
+               onChange={e=>setQuery(e.target.value)} onKeyDown={e=>e.key==="Enter" && runSearch()}/>
+        <button className="btn" onClick={runSearch} disabled={loading}>{loading?"Searching\u2026":"Search"}</button>
+      </div>
+      {results===null ? <div className="empty">Try: "payments vendor risk" or "who owns the rollout plan"</div> :
+       results.length===0 ? <div className="empty">No matches. Try different phrasing.</div> :
+      results.map(r=>(
+        <div className="search-hit" key={r.meeting_id} onClick={()=>{setActiveMeeting(r.meeting_id); setPage("summary");}}>
+          <div style={{display:"flex",justifyContent:"space-between"}}>
+            <div style={{fontWeight:600}}>{r.title}</div>
+            <span className="mono" style={{fontSize:11,color:"var(--muted)"}}>{r.project}</span>
+          </div>
+          <div style={{fontSize:13,color:"var(--muted)",marginTop:6}}>{r.snippet}</div>
+          <div className="score-bar"><div className="score-fill" style={{width:(r.score*100)+"%"}}/></div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------
+// Page: Project Dashboard
+// ---------------------------------------------------------------------
+function Dashboard({apiBase}){
+  const [stats, setStats] = useState(null);
+  useEffect(()=>{ api(apiBase, "/dashboard/stats").then(setStats).catch(()=>setStats(null)); }, [apiBase]);
+
+  if(!stats) return <div className="empty">Loading dashboard\u2026</div>;
+  const maxOwner = Math.max(1, ...Object.values(stats.actions_by_owner));
+
+  return (
+    <div>
+      <div className="page-head">
+        <div className="eyebrow">Overview</div>
+        <h1 className="page-title">Project Dashboard</h1>
+        <p className="page-desc">Follow-through at a glance: what's open, what's overdue, and who owns it.</p>
+      </div>
+
+      <div className="grid-4" style={{marginBottom:20}}>
+        <div className="stat"><div className="stat-num">{stats.total_meetings}</div><div className="stat-label">Meetings analyzed</div></div>
+        <div className="stat"><div className="stat-num" style={{color:"var(--violet)"}}>{stats.open_actions}</div><div className="stat-label">Open actions</div></div>
+        <div className="stat"><div className="stat-num" style={{color:"var(--rose)"}}>{stats.overdue_actions}</div><div className="stat-label">Overdue actions</div></div>
+        <div className="stat"><div className="stat-num" style={{color:"var(--teal)"}}>{stats.done_actions}</div><div className="stat-label">Completed actions</div></div>
+      </div>
+
+      <div className="grid-2">
+        <div className="card">
+          <div style={{fontWeight:600,marginBottom:14,fontSize:14}}>Actions by owner</div>
+          {Object.keys(stats.actions_by_owner).length===0 && <div className="empty">No actions yet.</div>}
+          {Object.entries(stats.actions_by_owner).sort((a,b)=>b[1]-a[1]).map(([owner,count])=>(
+            <div className="owner-bar-row" key={owner}>
+              <div style={{width:90,fontSize:13}}>{owner}</div>
+              <div className="owner-bar-track"><div className="owner-bar-fill" style={{width:(count/maxOwner*100)+"%"}}/></div>
+              <div className="mono" style={{fontSize:12,width:20,textAlign:"right"}}>{count}</div>
+            </div>
+          ))}
+        </div>
+        <div className="card">
+          <div style={{fontWeight:600,marginBottom:14,fontSize:14}}>Overdue by owner</div>
+          {Object.keys(stats.overdue_by_owner).length===0 && <div className="empty">Nothing overdue \u2014 clean slate.</div>}
+          {Object.entries(stats.overdue_by_owner).sort((a,b)=>b[1]-a[1]).map(([owner,count])=>(
+            <div className="kv" key={owner}>
+              <span>{owner}</span>
+              <span className="pill pill-overdue">{count} overdue</span>
+            </div>
+          ))}
+          <div style={{marginTop:18,paddingTop:14,borderTop:"1px solid var(--line)"}}>
+            <div className="kv"><span>Total decisions logged</span><span className="mono">{stats.total_decisions}</span></div>
+            <div className="kv"><span>Total risks flagged</span><span className="mono">{stats.total_risks}</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------
+// App shell
+// ---------------------------------------------------------------------
+function App(){
+  const [apiBase, setApiBase] = useApiBase();
+  const [page, setPage] = useState("upload");
+  const [meetings, setMeetings] = useState([]);
+  const [activeMeeting, setActiveMeeting] = useState(null);
+  const [toast, setToast] = useState(null);
+
+  const notify = (msg) => { setToast(msg); setTimeout(()=>setToast(null), 3200); };
+
+  const refreshMeetings = useCallback(async ()=>{
+    try{
+      const list = await api(apiBase, "/meetings");
+      setMeetings(list);
+      if(!activeMeeting && list.length) setActiveMeeting(list[0].id);
+    }catch(e){ /* backend not reachable yet */ }
+  }, [apiBase, activeMeeting]);
+
+  useEffect(()=>{ refreshMeetings(); }, [apiBase]);
+
+  return (
+    <div className="app">
+      <Sidebar page={page} setPage={setPage} apiBase={apiBase} setApiBase={setApiBase}/>
+      <div className="main">
+        {page==="upload" && <UploadPage apiBase={apiBase} meetings={meetings} refreshMeetings={refreshMeetings}
+                                          activeMeeting={activeMeeting} setActiveMeeting={setActiveMeeting} notify={notify}/>}
+        {page==="transcript" && <TranscriptPage apiBase={apiBase} meetings={meetings} activeMeeting={activeMeeting} setActiveMeeting={setActiveMeeting}/>}
+        {page==="summary" && <SummaryPage apiBase={apiBase} meetings={meetings} activeMeeting={activeMeeting} setActiveMeeting={setActiveMeeting}/>}
+        {page==="actions" && <ActionTracker apiBase={apiBase} notify={notify}/>}
+        {page==="decisions" && <DecisionLog apiBase={apiBase}/>}
+        {page==="search" && <SearchPage apiBase={apiBase} setPage={setPage} setActiveMeeting={setActiveMeeting}/>}
+        {page==="dashboard" && <Dashboard apiBase={apiBase}/>}
+      </div>
+      {toast && <div className="toast">{toast}</div>}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
